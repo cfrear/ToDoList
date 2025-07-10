@@ -1,4 +1,6 @@
+using Microsoft.Data.Sqlite;
 using ToDoList.Components;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
