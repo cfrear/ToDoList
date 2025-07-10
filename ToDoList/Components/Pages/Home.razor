@@ -4,34 +4,116 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-
-<button @onclick="() => dbtest()">test db</button>
+<h1>To Do List</h1>
 
 <div>
-    @if(success == true)
-    {
-        <a> DB CONNECTED</a>
-    }
+    <input type="text" @bind="@itemName" placeholder="Name" />
+    <br/>
+    <input type="text" @bind="@dueDate" placeholder="Due Date" />
 </div>
 
+<div>
+    <button @onclick="() => AddData()">Add Task</button>
+</div>
+
+<div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Due Date</th>
+                <th>Completed</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in listItems)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Name</td>
+                    <td>@item.DueDate</td>
+                    <td>@item.Completed</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+
 @code{
+    public string path = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + $"\\..\\..\\..");
 
-    public bool success = false;
+    public string itemName = "";
+    public DateOnly dueDate;
+    public List<ListItem> listItems = new List<ListItem>();
 
-    private void dbtest()
+    protected override async Task OnInitializedAsync()
     {
+        using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
+        connection.Open();
+
+        var sql = "CREATE TABLE IF NOT EXISTS ToDoList (id INTEGER PRIMARY KEY, name TEXT NOT NULL, duedate DATE NOT NULL, completed BOOL NOT NULL)";
+
+        using var command = new SqliteCommand(sql, connection);
+        await command.ExecuteNonQueryAsync();
+
+        await GetAllData();
+    }
+
+    private async Task AddData()
+    {
+        var sql = "INSERT INTO ToDoList (name, duedate, completed) VALUES (@itemName, @dueDate, 0)";
+
+        // Open a new database connection
+        using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
+        connection.Open();
+
+        // Bind parameters values
+        using var command = new SqliteCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@itemName", itemName);
+        command.Parameters.AddWithValue("@dueDate", dueDate);
+
+        // Execute the INSERT statement
+        var rowInserted = await command.ExecuteNonQueryAsync();
+
+        //Refresh table
+        await GetAllData();
+    }
+
+    private async Task GetAllData()
+    {
+        listItems.Clear();
+        var sql = "SELECT * FROM ToDoList";
+
         try
         {
-            var path = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + $"\\..\\..\\..");
-
             using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
             connection.Open();
-            success = true;
-            Console.WriteLine("Connected to the SQLite database!");
+
+            using var command = new SqliteCommand(sql, connection);
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    ListItem newItem = new ListItem();
+
+                    newItem.Id = reader.GetInt32(0);
+                    newItem.Name = reader.GetString(1);
+                    newItem.DueDate = reader.GetDateTime(2);
+                    newItem.Completed = reader.GetBoolean(3);
+
+                    listItems.Add(newItem);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No items found.");
+            }
 
         }
         catch (SqliteException ex)
