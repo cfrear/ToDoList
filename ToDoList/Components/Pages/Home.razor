@@ -17,6 +17,12 @@
 </div>
 
 <div>
+    <input type="date" />
+    <button>Mark all as completed</button>
+    <input type="checkbox" title="Show completed tasks"/> 
+</div>
+
+<div>
     <table class="table">
         <thead>
             <tr>
@@ -24,6 +30,7 @@
                 <th>Name</th>
                 <th>Due Date</th>
                 <th>Completed</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -33,9 +40,8 @@
                     <td>@item.Id</td>
                     <td>@item.Name</td>
                     <td>@item.DueDate</td>
-                    @* <td>@item.Completed</td> *@
-                    <td><InputCheckbox bind-Value="@item.Completed" ValueExpression="@(() => item.Completed)">@item.Completed</InputCheckbox></td>
-                    
+                    <td>@item.Completed</td>
+                    <td><button @onclick="() => SetCompleted(item.Id)">Mark as Completed</button></td>                    
                 </tr>
             }
         </tbody>
@@ -66,6 +72,10 @@
 
     private async Task AddData()
     {
+        if (string.IsNullOrEmpty(itemName))
+        {
+            return;
+        }
         var sql = "INSERT INTO ToDoList (name, duedate, completed) VALUES (@itemName, @dueDate, 0)";
 
         // Open a new database connection
@@ -79,7 +89,7 @@
         command.Parameters.AddWithValue("@dueDate", dueDate);
 
         // Execute the INSERT statement
-        var rowInserted = await command.ExecuteNonQueryAsync();
+        await command.ExecuteNonQueryAsync();
 
         //Refresh table
         await GetAllData();
@@ -122,5 +132,26 @@
         {
             Console.WriteLine(ex.Message);
         }
+    }
+
+    private async Task SetCompleted(int Id)
+    {
+        var sql = "UPDATE ToDoList SET completed = 1 WHERE id = @id";
+
+        // Open a new database connection
+        using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
+        connection.Open();
+
+        // Bind parameters values
+        using var command = new SqliteCommand(sql, connection);
+
+        command.Parameters.AddWithValue("@completed", 1);
+        command.Parameters.AddWithValue("@id", Id);
+
+        // Execute the UPDATE statement
+        await command.ExecuteNonQueryAsync();
+
+        //Refresh table
+        await GetAllData();
     }
 }
