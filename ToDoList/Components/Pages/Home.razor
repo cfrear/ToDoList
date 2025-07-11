@@ -1,57 +1,63 @@
 ﻿@page "/"
 @using Microsoft.Data.Sqlite
 @using ToDoList.Models
+@using MudBlazor
 
 <PageTitle>Home</PageTitle>
 
 <h1>To Do List</h1>
 
-<div>
-    <input type="text" @bind="@itemName" placeholder="Name" />
-    <br/>
-    <InputDate @bind-Value="@dueDate"></InputDate>
-</div>
+<MudGrid>
+    <MudItem xs="3">
+        <MudTextField @bind-Value="@itemName" Label="Task Name" Variant="Variant.Outlined"></MudTextField>
+    </MudItem>
+    <MudItem xs="3">
+        <MudDatePicker @bind-Value="@dueDate" Label="Due Date" Variant="Variant.Outlined"></MudDatePicker>
+    </MudItem>
+    <MudItem xs="1">
+        <MudButton @onclick="() => AddData()">Add Task</MudButton>
+    </MudItem>
 
-<div>
-    <button @onclick="() => AddData()">Add Task</button>
-</div>
+    <MudItem xs="5"></MudItem>
 
-<div>
-    <input type="date" />
-    <button>Mark all as completed</button>
-    <input type="checkbox" title="Show completed tasks"/> 
-</div>
+    <MudItem xs="12">
+        <MudText>Filters:</MudText>
+    </MudItem>
+    <MudItem xs="5">
+        <MudDatePicker @bind-Value="@dueDate" Label="Filter By Date" Variant="Variant.Outlined"></MudDatePicker>
+    </MudItem>
+    <MudItem xs="2">
+        <MudButton>Apply Filter</MudButton>
+    </MudItem>
+    <MudItem xs="2">
+        <MudSwitch @bind-Value="@test" Label="Show Completed Tasks" />
+    </MudItem>
+    <MudItem xs="2">
+        <MudButton>Mark Selected as Complete</MudButton>
+    </MudItem>
+</MudGrid>
 
-<div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Due Date</th>
-                <th>Completed</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in listItems)
-            {
-                <tr>
-                    <td>@item.Id</td>
-                    <td>@item.Name</td>
-                    <td>@item.DueDate</td>
-                    <td>@item.Completed</td>
-                    <td><button @onclick="() => SetCompleted(item.Id)">Mark as Completed</button></td>                    
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
+<MudDataGrid Items="@listItems" Filterable="true" FilterMode="DataGridFilterMode.Simple" SortMode="@SortMode.Single" Groupable="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Id" />
+        <PropertyColumn Property="x => x.Name" />
+        <PropertyColumn Property="x => x.DueDate" Title="Due Date" />
+        <PropertyColumn Property="x => x.Completed" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudStack Row>
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => SetCompleted(context.Item.Id)">Mark as Completed</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
 
 
 @code{
     public string path = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + $"\\..\\..\\..");
+
+    public bool test;
 
     public string itemName = "";
     public DateOnly dueDate = DateOnly.FromDateTime(DateTime.Now);

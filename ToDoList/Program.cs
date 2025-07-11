@@ -1,12 +1,15 @@
 using Microsoft.Data.Sqlite;
 using ToDoList.Components;
 using static System.Net.Mime.MediaTypeNames;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 
 var app = builder.Build();
 
