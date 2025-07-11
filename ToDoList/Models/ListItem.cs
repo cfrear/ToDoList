@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string? Name { get; set; }
-        public DateTime DueDate { get; set; }
+        public DateOnly DueDate { get; set; }
         public bool Completed { get; set; }
     }
 }
