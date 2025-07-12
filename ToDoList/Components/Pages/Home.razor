@@ -15,7 +15,7 @@
         <MudDatePicker @bind-Value="@dueDate" Label="Due Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="1">
-        <MudButton @onclick="() => AddData()">Add Task</MudButton>
+        <MudButton OnClick="() => AddData()" Color="Color.Primary">Add Task</MudButton>
     </MudItem>
 
     <MudItem xs="5"></MudItem>
@@ -23,22 +23,24 @@
     <MudItem xs="12">
         <MudText>Filters:</MudText>
     </MudItem>
-    <MudItem xs="5">
+    <MudItem xs="3">
         <MudDatePicker @bind-Value="@dueDate" Label="Filter By Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="2">
         <MudButton>Apply Filter</MudButton>
     </MudItem>
+    <MudItem xs="3"></MudItem>
     <MudItem xs="2">
-        <MudSwitch @bind-Value="@test" Label="Show Completed Tasks" />
+        <MudSwitch T="bool" Label="Show Completed Tasks" Color="Color.Primary" ValueChanged="@(b => GetData(b))"/>
     </MudItem>
     <MudItem xs="2">
-        <MudButton>Mark Selected as Complete</MudButton>
+        <MudButton OnClick="() => MarkSelectedAsComplete()" >Mark Selected as Complete</MudButton>
     </MudItem>
 </MudGrid>
 
-<MudDataGrid Items="@listItems" Filterable="true" FilterMode="DataGridFilterMode.Simple" SortMode="@SortMode.Single" Groupable="false">
+<MudDataGrid Items="@listItems" MultiSelection="true" @bind-SelectedItems="selectedItems" Filterable="true" FilterMode="DataGridFilterMode.Simple" SortMode="@SortMode.Single" Groupable="false">
     <Columns>
+        <SelectColumn T="ListItem" />
         <PropertyColumn Property="x => x.Id" />
         <PropertyColumn Property="x => x.Name" />
         <PropertyColumn Property="x => x.DueDate" Title="Due Date" />
@@ -57,11 +59,12 @@
 @code{
     public string path = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory + $"\\..\\..\\..");
 
-    public bool test;
+    public bool showCompleted = false;
 
     public string itemName = "";
     public DateOnly dueDate = DateOnly.FromDateTime(DateTime.Now);
     public List<ListItem> listItems = new List<ListItem>();
+    public HashSet<ListItem> selectedItems = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,7 +76,7 @@
         using var command = new SqliteCommand(sql, connection);
         await command.ExecuteNonQueryAsync();
 
-        await GetAllData();
+        await GetData(showCompleted);
     }
 
     private async Task AddData()
@@ -98,13 +101,23 @@
         await command.ExecuteNonQueryAsync();
 
         //Refresh table
-        await GetAllData();
+        await GetData(showCompleted);
     }
 
-    private async Task GetAllData()
+    private async Task GetData(bool getAll)
     {
         listItems.Clear();
-        var sql = "SELECT * FROM ToDoList";
+        string sql = "";
+
+        if (getAll)
+        {
+            sql = "SELECT * FROM ToDoList";
+        }
+        else
+        {
+            //Show only incomplete tasks
+            sql = $"SELECT * FROM ToDoList WHERE Completed = false";
+        }
 
         try
         {
@@ -151,13 +164,39 @@
         // Bind parameters values
         using var command = new SqliteCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@completed", 1);
+        // command.Parameters.AddWithValue("@completed", 1);
         command.Parameters.AddWithValue("@id", Id);
+
+        // Execute the UPDATE statement
+        await command.ExecuteNonQueryAsync();
+        //Refresh table
+        await GetData(showCompleted);
+    }
+
+    private async Task MarkSelectedAsComplete()
+    {
+        string ids = "";
+        foreach (var item in selectedItems)
+        {
+            ids = ids + "," + item.Id;
+        }
+
+        var sql = "UPDATE ToDoList SET completed = 1 WHERE id IN (@ids)";
+
+        // Open a new database connection
+        using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
+        connection.Open();
+
+        // Bind parameters values
+        using var command = new SqliteCommand(sql, connection);
+
+        // command.Parameters.AddWithValue("@completed", 1);
+        command.Parameters.AddWithValue("@ids", ids);
 
         // Execute the UPDATE statement
         await command.ExecuteNonQueryAsync();
 
         //Refresh table
-        await GetAllData();
+        await GetData(showCompleted);
     }
 }
