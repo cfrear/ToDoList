@@ -31,7 +31,7 @@
     </MudItem>
     <MudItem xs="3"></MudItem>
     <MudItem xs="2">
-        <MudSwitch T="bool" Label="Show Completed Tasks" Color="Color.Primary" ValueChanged="@(b => GetData(b))"/>
+        <MudSwitch T="bool" Label="Show Completed Tasks" Color="Color.Primary" ValueChanged="@(() => ToggleCompleted())"/>
     </MudItem>
     <MudItem xs="2">
         <MudButton OnClick="() => MarkSelectedAsComplete()" >Mark Selected as Complete</MudButton>
@@ -197,6 +197,12 @@
         await command.ExecuteNonQueryAsync();
 
         //Refresh table
+        await GetData(showCompleted);
+    }
+
+    private async Task ToggleCompleted()
+    {
+        showCompleted = !showCompleted;
         await GetData(showCompleted);
     }
 }
