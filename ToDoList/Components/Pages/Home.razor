@@ -15,7 +15,7 @@
         <MudDatePicker @bind-Date="@dueDate" Label="Due Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="1">
-        <MudButton OnClick="() => AddData()" Color="Color.Primary">Add Task</MudButton>
+        <MudButton Style="margin-top:17px" OnClick="() => AddData()" Variant="Variant.Outlined" Color="Color.Primary">Add Task</MudButton>
     </MudItem>
 
     <MudItem xs="5"></MudItem>
@@ -27,14 +27,14 @@
         <MudDatePicker @bind-Value="@dueDate" Label="Filter By Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="2">
-        <MudButton>Apply Filter</MudButton>
+        <MudButton Style="margin-top:17px" Variant="Variant.Outlined" Color="Color.Primary">Apply Filter</MudButton>
     </MudItem>
-    <MudItem xs="3"></MudItem>
+    <MudItem xs="2"></MudItem>
     <MudItem xs="2">
-        <MudSwitch T="bool" Label="Show Completed Tasks" Color="Color.Primary" ValueChanged="@(() => ToggleCompleted())"/>
+        <MudSwitch T="bool" Style="margin-top:10px" Label="Show Completed Tasks" Color="Color.Primary" ValueChanged="@(() => ToggleCompleted())" />
     </MudItem>
-    <MudItem xs="2">
-        <MudButton OnClick="() => MarkSelectedAsComplete()" >Mark Selected as Complete</MudButton>
+    <MudItem xs="3">
+        <MudButton Style="margin-top:17px" OnClick="() => MarkSelectedAsComplete()" Variant="Variant.Outlined" Color="Color.Primary">Mark Selected as Complete</MudButton>
     </MudItem>
 </MudGrid>
 
@@ -185,6 +185,8 @@
     {
         //Not a fan of the way this method works, but this is my first time trying SQLite
         //I would need to invest some time into finding out how to properly use temp tables or batch updating
+        if(selectedItems.Count < 1) { return; }
+
         string ids = "";
         foreach (var item in selectedItems)
         {
