@@ -12,7 +12,7 @@
         <MudTextField @bind-Value="@itemName" Label="Task Name" Variant="Variant.Outlined"></MudTextField>
     </MudItem>
     <MudItem xs="3">
-        <MudDatePicker @bind-Value="@dueDate" Label="Due Date" Variant="Variant.Outlined"></MudDatePicker>
+        <MudDatePicker @bind-Date="@dueDate" Label="Due Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="1">
         <MudButton OnClick="() => AddData()" Color="Color.Primary">Add Task</MudButton>
@@ -48,7 +48,10 @@
         <TemplateColumn>
             <CellTemplate>
                 <MudStack Row>
-                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => SetCompleted(context.Item.Id)">Mark as Completed</MudButton>
+                    @if (!context.Item.Completed)
+                    {
+                        <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary" OnClick="() => SetCompleted(context.Item.Id)">Mark as Completed</MudButton>
+                    }
                 </MudStack>
             </CellTemplate>
         </TemplateColumn>
@@ -62,7 +65,7 @@
     public bool showCompleted = false;
 
     public string itemName = "";
-    public DateOnly dueDate = DateOnly.FromDateTime(DateTime.Now);
+    public DateTime? dueDate = DateTime.Now;
     public List<ListItem> listItems = new List<ListItem>();
     public HashSet<ListItem> selectedItems = new();
 
@@ -85,7 +88,7 @@
         {
             return;
         }
-        var sql = "INSERT INTO ToDoList (name, duedate, completed) VALUES (@itemName, @dueDate, 0)";
+        var sql = "INSERT INTO ToDoList (name, duedate, completed) VALUES (@itemName, @dueDate, @completed)";
 
         // Open a new database connection
         using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
@@ -95,8 +98,9 @@
         using var command = new SqliteCommand(sql, connection);
 
         command.Parameters.AddWithValue("@itemName", itemName);
-        command.Parameters.AddWithValue("@dueDate", dueDate);
-
+        command.Parameters.AddWithValue("@dueDate", DateOnly.FromDateTime(dueDate.Value));
+        command.Parameters.AddWithValue("@completed", "0");
+        
         // Execute the INSERT statement
         await command.ExecuteNonQueryAsync();
 
@@ -155,7 +159,7 @@
 
     private async Task SetCompleted(int Id)
     {
-        var sql = "UPDATE ToDoList SET completed = 1 WHERE id = @id";
+        var sql = "UPDATE ToDoList SET completed = @completed WHERE id = @id";
 
         // Open a new database connection
         using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
@@ -164,7 +168,7 @@
         // Bind parameters values
         using var command = new SqliteCommand(sql, connection);
 
-        // command.Parameters.AddWithValue("@completed", 1);
+        command.Parameters.AddWithValue("@completed", 1);
         command.Parameters.AddWithValue("@id", Id);
 
         // Execute the UPDATE statement
@@ -175,13 +179,17 @@
 
     private async Task MarkSelectedAsComplete()
     {
+        //Not a fan of the way this method works, but this is my first time trying SQLite
+        //I would need to invest some time into finding out how to properly use temp tables or batch updating
         string ids = "";
         foreach (var item in selectedItems)
         {
-            ids = ids + "," + item.Id;
-        }
+            ids += item.Id + ",";
+        };
+        ;
+        ids = ids.Substring(0, (ids.Length - 1));
 
-        var sql = "UPDATE ToDoList SET completed = 1 WHERE id IN (@ids)";
+        var sql = $"UPDATE ToDoList SET completed = @completed WHERE id IN ({ids})";
 
         // Open a new database connection
         using var connection = new SqliteConnection(@$"Data Source={path}\\tododatabase.db");
@@ -190,7 +198,7 @@
         // Bind parameters values
         using var command = new SqliteCommand(sql, connection);
 
-        // command.Parameters.AddWithValue("@completed", 1);
+        command.Parameters.AddWithValue("@completed", 1);
         command.Parameters.AddWithValue("@ids", ids);
 
         // Execute the UPDATE statement
