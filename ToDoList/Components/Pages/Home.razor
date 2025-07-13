@@ -24,10 +24,11 @@
         <MudText>Filters:</MudText>
     </MudItem>
     <MudItem xs="3">
-        <MudDatePicker @bind-Value="@dueDate" Label="Filter By Date" Variant="Variant.Outlined"></MudDatePicker>
+        <MudDatePicker @bind-Date="@filterDate" Label="Filter By Date" Variant="Variant.Outlined"></MudDatePicker>
     </MudItem>
     <MudItem xs="2">
-        <MudButton Style="margin-top:17px" Variant="Variant.Outlined" Color="Color.Primary">Apply Filter</MudButton>
+        @* Disabled as date filtering does not currently work using this method*@
+        <MudButton Style="margin-top:17px" OnClick="() => ApplyDateFilter()" Variant="Variant.Outlined" Color="Color.Primary" Disabled="true">Apply Filter</MudButton>
     </MudItem>
     <MudItem xs="2"></MudItem>
     <MudItem xs="2">
@@ -66,6 +67,7 @@
 
     public string itemName = "";
     public DateTime? dueDate = DateTime.Now;
+    public DateTime? filterDate;
     public List<ListItem> listItems = new List<ListItem>();
     public HashSet<ListItem> selectedItems = new();
 
@@ -112,7 +114,7 @@
         await GetData(showCompleted);
     }
 
-    private async Task GetData(bool getAll)
+    private async Task GetData(bool getAll, DateTime? filterDate = null)
     {
         listItems.Clear();
         string sql = "";
@@ -126,6 +128,13 @@
             //Show only incomplete tasks
             sql = $"SELECT * FROM ToDoList WHERE Completed = false";
         }
+
+        //This doesn't work. I can't get it to match the date format in the database, even though both look the same.
+        //I expect it's either because I'm using DateOnly, or a SQLite issue.
+        // if (filterDate != null)
+        // {
+        //     sql += " AND DueDate = " + DateOnly.FromDateTime(filterDate.Value).ToString("yyyy-MM-dd");
+        // }
 
         try
         {
@@ -212,6 +221,11 @@
 
         //Refresh table
         await GetData(showCompleted);
+    }
+
+    public async Task ApplyDateFilter()
+    {
+        await GetData(showCompleted, filterDate);
     }
 
     private async Task ToggleCompleted()
