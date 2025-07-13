@@ -1,3 +1,6 @@
+# ToDoList
+Blazor / C# / .NET 9 / MudBlazor / SQLite
+
 This was my first time using SQLite. A friend was telling me about it recently and I thought this task sounded like it would be a good application for it.
 For an program this small it works fine, but for anything bigger I think I'd still prefer to use a proper database with EntityFramework and LINQ.
 
