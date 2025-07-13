@@ -100,9 +100,13 @@
         command.Parameters.AddWithValue("@itemName", itemName);
         command.Parameters.AddWithValue("@dueDate", DateOnly.FromDateTime(dueDate.Value));
         command.Parameters.AddWithValue("@completed", "0");
-        
+
         // Execute the INSERT statement
         await command.ExecuteNonQueryAsync();
+
+        //Reset inputs
+        itemName = "";
+        dueDate = DateTime.Now;
 
         //Refresh table
         await GetData(showCompleted);
